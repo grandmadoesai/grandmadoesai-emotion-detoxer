@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import DisclaimerGate from './components/DisclaimerGate'
 
 export const metadata: Metadata = {
   title: 'The AI Real Estate Emotion Detoxer',
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <DisclaimerGate>{children}</DisclaimerGate>
+      </body>
     </html>
   )
 }
