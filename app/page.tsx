@@ -3,13 +3,8 @@
 import React, { useState } from 'react';
 import { Lock, Home, FileText, MapPin, TrendingUp, AlertTriangle, ShieldCheck } from 'lucide-react';
 
-const COUNTIES_DATA = {
-  WA: ['Clark', 'King', 'Pierce', 'Snohomish', 'Spokane', 'Thurston', 'Whatcom'],
-  OR: ['Multnomah', 'Clackamas', 'Washington', 'Lane', 'Marion', 'Jackson']
-};
-
 export default function HomeForm() {
-  const [state, setState] = useState<'WA' | 'OR'>('WA');
+  const [state, setState] = useState('WA');
   const [county, setCounty] = useState('Clark');
   const [buyerMax, setBuyerMax] = useState('');
   const [sellerMin, setSellerMin] = useState('');
@@ -19,16 +14,6 @@ export default function HomeForm() {
   const hasValidInputs = !isNaN(bMax) && !isNaN(sMin);
   const isOverlap = hasValidInputs && bMax >= sMin;
   const midpoint = hasValidInputs ? (bMax + sMin) / 2 : 0;
-
-  const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedState = e.target.value as 'WA' | 'OR';
-    setState(selectedState);
-    if (selectedState === 'WA') {
-      setCounty('Clark');
-    } else {
-      setCounty('Multnomah');
-    }
-  };
 
   return (
     <main className="min-h-screen p-4 md:p-8 max-w-4xl mx-auto font-sans selection:bg-[#3F5C4C] selection:text-white">
@@ -55,7 +40,11 @@ export default function HomeForm() {
             <label className="block text-xs font-bold uppercase tracking-wider text-[#16241D]/70 mb-2">Select State</label>
             <select 
               value={state} 
-              onChange={handleStateChange}
+              onChange={(e) => {
+                const s = e.target.value;
+                setState(s);
+                setCounty(s === 'WA' ? 'Clark' : 'Multnomah');
+              }}
               className="w-full bg-[#F6F4EF] border-2 border-[#16241D] rounded-lg p-3 font-bold text-[#16241D] focus:outline-none"
             >
               <option value="WA">Washington (WA)</option>
@@ -69,9 +58,23 @@ export default function HomeForm() {
               onChange={(e) => setCounty(e.target.value)}
               className="w-full bg-[#F6F4EF] border-2 border-[#16241D] rounded-lg p-3 font-bold text-[#16241D] focus:outline-none"
             >
-              {COUNTIES_DATA[state].map((c) => (
-                <option key={c} value={c}>{c} County</option>
-              ))}
+              {state === 'WA' ? (
+                <>
+                  <option value="Clark">Clark County</option>
+                  <option value="King">King County</option>
+                  <option value="Pierce">Pierce County</option>
+                  <option value="Snohomish">Snohomish County</option>
+                  <option value="Spokane">Spokane County</option>
+                </>
+              ) : (
+                <>
+                  <option value="Multnomah">Multnomah County</option>
+                  <option value="Clackamas">Clackamas County</option>
+                  <option value="Washington">Washington County</option>
+                  <option value="Lane">Lane County</option>
+                  <option value="Marion">Marion County</option>
+                </>
+              )}
             </select>
           </div>
         </div>
@@ -152,7 +155,7 @@ export default function HomeForm() {
 
       {/* FUTURE SUITE UPGRADES */}
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
-        <div className="bg-[#F6F4EF] border border-[#16241D]/20 p-5 rounded-xl opacity-75 relative overflow-hidden group">
+        <div className="bg-[#F6F4EF] border border-[#16241D]/20 p-5 rounded-xl opacity-75 relative overflow-hidden">
           <div className="absolute top-3 right-3 bg-[#16241D] text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
             Pipeline
           </div>
@@ -164,7 +167,7 @@ export default function HomeForm() {
           </p>
         </div>
 
-        <div className="bg-[#F6F4EF] border border-[#16241D]/20 p-5 rounded-xl opacity-75 relative overflow-hidden group">
+        <div className="bg-[#F6F4EF] border border-[#16241D]/20 p-5 rounded-xl opacity-75 relative overflow-hidden">
           <div className="absolute top-3 right-3 bg-[#16241D] text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-widest">
             Pipeline
           </div>
@@ -183,7 +186,4 @@ export default function HomeForm() {
           <AlertTriangle size={16} /> Armored Legal & Operational Disclaimers
         </h3>
         <div className="space-y-3 text-xs leading-relaxed font-medium text-red-900/90">
-          <p>
-            <strong>NOT FINANCIAL OR LEGAL ADVICE:</strong> The Objective Reality Matching System (ZOPA Filter) is a purely mathematical computational tool designed to isolate overlapping ranges. It does not constitute real estate brokerage services, certified financial planning, legal representation, or formal appraisals under WA or OR revised statutes.
-          </p>
           <p>
