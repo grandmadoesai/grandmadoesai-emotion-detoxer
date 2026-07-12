@@ -23,7 +23,11 @@ export default function HomeForm() {
   const handleStateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedState = e.target.value as 'WA' | 'OR';
     setState(selectedState);
-    setCounty(COUNTIES_DATA[selectedState][0]);
+    if (selectedState === 'WA') {
+      setCounty('Clark');
+    } else {
+      setCounty('Multnomah');
+    }
   };
 
   return (
