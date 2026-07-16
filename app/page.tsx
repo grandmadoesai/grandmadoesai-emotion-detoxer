@@ -73,6 +73,9 @@ export default function HomeForm() {
       <p className="text-[#3F5C4C] mt-4">
         Enter the address of a home you toured today to save it for comparison.
       </p>
+      <a href="/summary" className="inline-block mt-3 text-sm text-[#3F5C4C] underline">
+        View my saved properties →
+      </a>
 
       <form
         onSubmit={handleSubmit}
@@ -134,6 +137,5 @@ export default function HomeForm() {
         </div>
       )}
     </main>
-    
   );
 }
