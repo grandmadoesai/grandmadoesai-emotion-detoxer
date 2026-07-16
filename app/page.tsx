@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "../lib/supabaseClient";
 
 export default function HomeForm() {
@@ -12,6 +13,10 @@ export default function HomeForm() {
   const [message, setMessage] = useState("");
   const [savedProperties, setSavedProperties] = useState<any[]>([]);
   const [sessionId, setSessionId] = useState("");
+
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState("");
+  const [preview, setPreview] = useState<any>(null);
 
   useEffect(() => {
     let sid = localStorage.getItem("buyer_session_id");
@@ -32,6 +37,79 @@ export default function HomeForm() {
 
     if (!error && data) {
       setSavedProperties(data);
+    }
+  }
+
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleScan(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setScanning(true);
+    setScanError("");
+    setPreview(null);
+
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await fetch("/api/scan-listing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mediaType: file.type }),
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setScanError(json.error || "Something went wrong reading the image.");
+      } else {
+        setPreview(json.result);
+      }
+    } catch (err: any) {
+      setScanError("Something went wrong: " + err.message);
+    } finally {
+      setScanning(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleSavePreview() {
+    if (!preview) return;
+    setLoading(true);
+    setMessage("");
+
+    const { error } = await supabase.from("properties").insert([
+      {
+        address: preview.address || "Unknown address",
+        user_notes: notes.trim(),
+        session_id: sessionId,
+        price: preview.price,
+        sqft: preview.sqft,
+        bedrooms: preview.bedrooms,
+        bathrooms: preview.bathrooms,
+        year_built: preview.year_built,
+        extracted_data: preview.extra || null,
+      },
+    ]);
+
+    setLoading(false);
+
+    if (error) {
+      setMessage("Something went wrong: " + error.message);
+    } else {
+      setMessage("Property saved successfully!");
+      setPreview(null);
+      setNotes("");
+      loadProperties(sessionId);
     }
   }
 
@@ -73,13 +151,65 @@ export default function HomeForm() {
       <p className="text-[#3F5C4C] mt-4">
         Enter the address of a home you toured today to save it for comparison.
       </p>
-      <a href="/summary" className="inline-block mt-3 text-sm text-[#3F5C4C] underline">
+      <Link href="/summary" className="inline-block mt-3 text-sm text-[#3F5C4C] underline">
         View my saved properties →
-      </a>
+      </Link>
+
+      <div className="max-w-md mx-auto mt-8 text-left bg-white p-6 rounded-lg shadow">
+        <label className="block text-sm font-semibold text-[#16241D] mb-2">
+          📸 Scan a listing screenshot
+        </label>
+        <p className="text-xs text-gray-500 mb-3">
+          Upload a screenshot from Zillow, Redfin, or Realtor.com and we'll read the details for you.
+        </p>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleScan}
+          disabled={scanning}
+          className="w-full text-sm"
+        />
+        {scanning && (
+          <p className="mt-3 text-sm text-[#3F5C4C]">Reading listing…</p>
+        )}
+        {scanError && (
+          <p className="mt-3 text-sm text-red-600">{scanError}</p>
+        )}
+
+        {preview && (
+          <div className="mt-4 bg-[#F6F4EF] p-4 rounded-md">
+            <p className="font-semibold text-[#16241D]">
+              {preview.address || "Address not found"}
+            </p>
+            <p className="text-sm text-gray-600 mt-1">
+              {preview.price ? `$${preview.price.toLocaleString()}` : "—"}
+              {preview.sqft ? ` · ${preview.sqft} sqft` : ""}
+              {preview.bedrooms ? ` · ${preview.bedrooms} bd` : ""}
+              {preview.bathrooms ? ` · ${preview.bathrooms} ba` : ""}
+            </p>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Add a note about this one (optional)"
+              className="w-full border border-gray-300 rounded-md p-2 mt-3 text-sm"
+              rows={2}
+            />
+            <button
+              onClick={handleSavePreview}
+              disabled={loading}
+              className="w-full mt-3 py-2 rounded-md font-semibold text-white bg-[#3F5C4C] disabled:bg-gray-400"
+            >
+              {loading ? "Saving..." : "Save this property"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <p className="text-sm text-gray-500 mt-8">— or add it manually —</p>
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-md mx-auto mt-8 text-left bg-white p-6 rounded-lg shadow"
+        className="max-w-md mx-auto mt-4 text-left bg-white p-6 rounded-lg shadow"
       >
         <label className="block text-sm font-semibold text-[#16241D] mb-1">
           Property Address
@@ -128,6 +258,12 @@ export default function HomeForm() {
                 className="bg-white p-4 rounded-md shadow border border-gray-200"
               >
                 <p className="font-semibold text-[#16241D]">{p.address}</p>
+                {p.price && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    ${Number(p.price).toLocaleString()}
+                    {p.sqft ? ` · ${p.sqft} sqft` : ""}
+                  </p>
+                )}
                 {p.user_notes && (
                   <p className="text-sm text-gray-600 mt-1">{p.user_notes}</p>
                 )}
