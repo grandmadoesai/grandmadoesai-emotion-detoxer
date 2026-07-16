@@ -40,14 +40,42 @@ export default function HomeForm() {
     }
   }
 
-  function fileToBase64(file: File): Promise<string> {
+  function resizeImageToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result.split(",")[1]);
-      };
       reader.onerror = reject;
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = reject;
+        img.onload = () => {
+          const maxDimension = 1600;
+          let { width, height } = img;
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = Math.round((height * maxDimension) / width);
+              width = maxDimension;
+            } else {
+              width = Math.round((width * maxDimension) / height);
+              height = maxDimension;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Could not process image"));
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+          resolve(dataUrl.split(",")[1]);
+        };
+        img.src = reader.result as string;
+      };
       reader.readAsDataURL(file);
     });
   }
@@ -61,11 +89,11 @@ export default function HomeForm() {
     setPreview(null);
 
     try {
-      const base64 = await fileToBase64(file);
+      const base64 = await resizeImageToBase64(file);
       const res = await fetch("/api/scan-listing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mediaType: file.type || "image/png" }),
+        body: JSON.stringify({ imageBase64: base64, mediaType: "image/jpeg" }),
       });
 
       let json: any = null;
