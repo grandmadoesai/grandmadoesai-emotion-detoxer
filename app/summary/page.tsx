@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function SummaryPage() {
@@ -42,12 +43,12 @@ export default function SummaryPage() {
         </p>
 
         <div className="mt-6 text-center">
-          
+          <Link
             href="/"
             className="inline-block text-sm text-[#3F5C4C] underline"
           >
             ← Back to add another property
-          </a>
+          </Link>
         </div>
 
         {loading ? (
@@ -57,12 +58,12 @@ export default function SummaryPage() {
             <p className="text-gray-600">
               You haven't saved any properties yet.
             </p>
-            
+            <Link
               href="/"
               className="inline-block mt-4 py-2 px-4 rounded-md font-semibold text-white bg-[#3F5C4C]"
             >
               Add your first property
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="mt-8 overflow-x-auto">
