@@ -10,9 +10,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY?.replace(/[^A-Za-z0-9_-]/g, "");
+    const rawKey = process.env.ANTHROPIC_API_KEY;
+    const apiKey = rawKey?.replace(/[^A-Za-z0-9_-]/g, "");
     if (!apiKey) {
-      return NextResponse.json({ error: "Server not configured" }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: "Server not configured",
+          debug: {
+            keyExists: !!rawKey,
+            keyLength: rawKey ? rawKey.length : 0,
+            imageSizeKB: Math.round((imageBase64.length * 0.75) / 1024),
+          },
+        },
+        { status: 500 }
+      );
     }
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
