@@ -65,9 +65,21 @@ export default function HomeForm() {
       const res = await fetch("/api/scan-listing", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mediaType: file.type }),
+        body: JSON.stringify({ imageBase64: base64, mediaType: file.type || "image/png" }),
       });
-      const json = await res.json();
+
+      let json: any = null;
+      const rawBody = await res.text();
+      try {
+        json = JSON.parse(rawBody);
+      } catch {
+        setScanError(
+          `Server returned non-JSON (status ${res.status}): ${rawBody.slice(0, 200)}`
+        );
+        setScanning(false);
+        e.target.value = "";
+        return;
+      }
 
       if (!res.ok) {
         setScanError(json.error || "Something went wrong reading the image.");
@@ -75,7 +87,9 @@ export default function HomeForm() {
         setPreview(json.result);
       }
     } catch (err: any) {
-      setScanError("Something went wrong: " + err.message);
+      setScanError(
+        `[${err?.name || "Error"}] ${err?.message || "Unknown"} (file type: ${file.type || "unknown"}, size: ${file.size})`
+      );
     } finally {
       setScanning(false);
       e.target.value = "";
@@ -173,7 +187,7 @@ export default function HomeForm() {
           <p className="mt-3 text-sm text-[#3F5C4C]">Reading listing…</p>
         )}
         {scanError && (
-          <p className="mt-3 text-sm text-red-600">{scanError}</p>
+          <p className="mt-3 text-sm text-red-600 break-words">{scanError}</p>
         )}
 
         {preview && (
