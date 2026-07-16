@@ -12,18 +12,15 @@ export default function SummaryPage() {
 
   useEffect(() => {
     const sid = localStorage.getItem("buyer_session_id");
-    if (sid) {
-      loadProperties(sid);
-    } else {
-      setLoading(false);
-    }
+    loadProperties(sid);
   }, []);
 
-  async function loadProperties(sid: string) {
+  async function loadProperties(sid: string | null) {
+    const ids = sid ? [sid, "shortcut"] : ["shortcut"];
     const { data, error } = await supabase
       .from("properties")
       .select("*")
-      .eq("session_id", sid)
+      .in("session_id", ids)
       .order("created_at", { ascending: false });
 
     if (!error && data) {
@@ -72,6 +69,8 @@ export default function SummaryPage() {
                 <tr>
                   <th className="text-left p-3">#</th>
                   <th className="text-left p-3">Address</th>
+                  <th className="text-left p-3">Price</th>
+                  <th className="text-left p-3">Sqft</th>
                   <th className="text-left p-3">Notes</th>
                   <th className="text-left p-3">Date Saved</th>
                 </tr>
@@ -85,6 +84,12 @@ export default function SummaryPage() {
                     <td className="p-3 text-gray-500">{i + 1}</td>
                     <td className="p-3 font-semibold text-[#16241D]">
                       {p.address}
+                    </td>
+                    <td className="p-3 text-gray-600">
+                      {p.price ? `$${Number(p.price).toLocaleString()}` : "—"}
+                    </td>
+                    <td className="p-3 text-gray-600">
+                      {p.sqft || "—"}
                     </td>
                     <td className="p-3 text-gray-600">
                       {p.user_notes || "—"}
