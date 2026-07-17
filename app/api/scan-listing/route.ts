@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
  
 export const dynamic = "force-dynamic";
- 
+export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   try {
     const { imageBase64: rawImageBase64, mediaType } = await req.json();
