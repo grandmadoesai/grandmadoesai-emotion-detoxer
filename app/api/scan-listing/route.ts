@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-
+ 
 export const dynamic = "force-dynamic";
-
+ 
 export async function POST(req: NextRequest) {
   try {
-    const { imageBase64, mediaType } = await req.json();
-
-    if (!imageBase64) {
+    const { imageBase64: rawImageBase64, mediaType } = await req.json();
+ 
+    if (!rawImageBase64) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
-
+ 
+    const imageBase64 = rawImageBase64
+      .replace(/^data:[^;]+;base64,/, "")
+      .replace(/\s/g, "");
+ 
     const rawKey = process.env.ANTHROPIC_API_KEY;
     const apiKey = rawKey?.replace(/[^A-Za-z0-9_-]/g, "");
     if (!apiKey) {
@@ -25,7 +29,7 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-
+ 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -50,8 +54,8 @@ export async function POST(req: NextRequest) {
               },
               {
                 type: "text",
-                text: `You are reading a screenshot of a real estate listing (Zillow, Redfin, Realtor.com, or similar). Extract every piece of information you can find and return ONLY a JSON object, no other text, no markdown fences.
-
+                text: `You are reading a screenshot of a real estate listing (Zillow, Redfin, Realtor.com, or similar).
+ 
 Use exactly this shape:
 {
   "address": string or null,
@@ -60,9 +64,9 @@ Use exactly this shape:
   "bedrooms": number or null,
   "bathrooms": number or null,
   "year_built": number or null,
-  "extra": { any other fields you can find, e.g. lot_size, hoa_fee, property_type, days_on_market, price_per_sqft, garage, description, school_district, heating, cooling, etc. Use snake_case keys. Omit fields you cannot find. }
+  "extra": { any other fields you can find, e.g. lot_size, hoa_fee, property_type, days_on_market, price_per_sqft }
 }
-
+ 
 If you cannot find a field, use null. Do not guess values that aren't visible in the image.`,
               },
             ],
@@ -70,19 +74,19 @@ If you cannot find a field, use null. Do not guess values that aren't visible in
         ],
       }),
     });
-
+ 
     const data = await response.json();
-
+ 
     if (!response.ok) {
       return NextResponse.json(
         { error: data?.error?.message || "AI request failed" },
         { status: 500 }
       );
     }
-
+ 
     const textBlock = data.content?.find((b: any) => b.type === "text");
     const rawText = textBlock?.text || "{}";
-
+ 
     let parsed;
     try {
       const cleaned = rawText.replace(/```json|```/g, "").trim();
@@ -93,7 +97,7 @@ If you cannot find a field, use null. Do not guess values that aren't visible in
         { status: 500 }
       );
     }
-
+ 
     return NextResponse.json({ result: parsed });
   } catch (err: any) {
     return NextResponse.json(
@@ -102,3 +106,4 @@ If you cannot find a field, use null. Do not guess values that aren't visible in
     );
   }
 }
+ 
