@@ -1,19 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
- 
+
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     const { imageBase64: rawImageBase64, mediaType } = await req.json();
- 
+
     if (!rawImageBase64) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
     }
- 
+
     const imageBase64 = rawImageBase64
       .replace(/^data:[^;]+;base64,/, "")
       .replace(/\s/g, "");
- 
+
     const rawKey = process.env.ANTHROPIC_API_KEY;
     const apiKey = rawKey?.replace(/[^A-Za-z0-9_-]/g, "");
     if (!apiKey) {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
- 
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
               {
                 type: "text",
                 text: `You are reading a screenshot of a real estate listing (Zillow, Redfin, Realtor.com, or similar).
- 
+
 Use exactly this shape:
 {
   "address": string or null,
@@ -66,7 +67,7 @@ Use exactly this shape:
   "year_built": number or null,
   "extra": { any other fields you can find, e.g. lot_size, hoa_fee, property_type, days_on_market, price_per_sqft }
 }
- 
+
 If you cannot find a field, use null. Do not guess values that aren't visible in the image.`,
               },
             ],
@@ -74,19 +75,32 @@ If you cannot find a field, use null. Do not guess values that aren't visible in
         ],
       }),
     });
- 
+
     const data = await response.json();
- 
+
     if (!response.ok) {
+      // DEBUG: privremeno vraćamo detalje o primljenom base64 stringu
+      // da vidimo zašto Anthropic API odbija podatke
       return NextResponse.json(
-        { error: data?.error?.message || "AI request failed" },
+        {
+          error: data?.error?.message || "AI request failed",
+          debug: {
+            receivedLength: imageBase64.length,
+            firstChars: imageBase64.slice(0, 30),
+            lastChars: imageBase64.slice(-30),
+            mediaType: mediaType || "image/jpeg",
+            containsSpace: /\s/.test(imageBase64),
+            containsDataPrefix: /^data:/.test(rawImageBase64),
+            validBase64Chars: /^[A-Za-z0-9+/=]*$/.test(imageBase64),
+          },
+        },
         { status: 500 }
       );
     }
- 
+
     const textBlock = data.content?.find((b: any) => b.type === "text");
     const rawText = textBlock?.text || "{}";
- 
+
     let parsed;
     try {
       const cleaned = rawText.replace(/```json|```/g, "").trim();
@@ -97,7 +111,7 @@ If you cannot find a field, use null. Do not guess values that aren't visible in
         { status: 500 }
       );
     }
- 
+
     return NextResponse.json({ result: parsed });
   } catch (err: any) {
     return NextResponse.json(
@@ -106,4 +120,3 @@ If you cannot find a field, use null. Do not guess values that aren't visible in
     );
   }
 }
- 
