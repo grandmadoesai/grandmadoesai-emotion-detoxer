@@ -1,87 +1,83 @@
-"use client";
+// UPDATE THIS COMPONENT IN THE FRONTEND TO INCLUDE THE NEW DISCLAIMER
+import React, { useState } from 'react';
 
-import { useState, useEffect } from "react";
+export default function LegalNoticeModal({ onAccept }) {
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
-export default function DisclaimerGate({ children }: { children: React.ReactNode }) {
-  const [accepted, setAccepted] = useState(false);
-  const [checked, setChecked] = useState(false);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("disclaimerAccepted");
-    if (saved === "true") {
-      setAccepted(true);
-    }
-    setReady(true);
-  }, []);
-
-  const handleAccept = () => {
-    if (checked) {
-      localStorage.setItem("disclaimerAccepted", "true");
-      setAccepted(true);
+  const handleScroll = (e) => {
+    const target = e.target;
+    // Checks if user scrolled to the bottom of the legal text
+    if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
+      setHasScrolledToBottom(true);
     }
   };
 
-  if (!ready) return null;
+  return (
+    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-2xl w-full p-6 shadow-2xl flex flex-col max-h-[85vh]">
+        
+        <h2 className="text-xl font-bold text-gray-900 mb-2 border-b pb-2">Important Legal Notice</h2>
+        <p className="text-xs font-semibold text-red-600 mb-4 uppercase tracking-wider">
+          APPLICATION DISCLAIMER • CRITICAL LEGAL NOTICE, LEGAL DISCLAIMER & DATA PRIVACY AGREEMENT
+        </p>
 
-  if (!accepted) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-        <div className="bg-[#F6F4EF] max-w-2xl w-full max-h-[80vh] overflow-y-auto rounded-lg p-6 shadow-xl">
-          <h2 className="text-xl font-bold text-[#16241D] mb-4">
-            Important Legal Notice
-          </h2>
-          <pre className="whitespace-pre-wrap text-sm text-[#16241D] font-sans leading-relaxed">
-{`APPLICATION DISCLAIMER
+        {/* Scrollable Text Box */}
+        <div 
+          onScroll={handleScroll}
+          className="overflow-y-auto pr-2 text-sm text-gray-700 space-y-4 mb-6 border p-4 bg-gray-50 rounded"
+          style={{ maxHeight: '50vh' }}
+        >
+          <p className="font-bold text-gray-900">
+            IMPORTANT: BY ACCESSING OR USING THIS APPLICATION, YOU EXPLICITLY AGREE TO BE BOUND BY ALL THE TERMS AND CONDITIONS STATED BELOW. IF YOU DO NOT AGREE, YOU MUST IMMEDIATELY CEASE AND TERMINATE ANY USE OF THIS PLATFORM.
+          </p>
 
-CRITICAL LEGAL NOTICE, LEGAL DISCLAIMER & DATA PRIVACY AGREEMENT
+          <div>
+            <h3 className="font-bold text-gray-900 mb-1">1. ABSOLUTE DATA PRIVACY & ENCRYPTION GUARANTEE (NO HUMAN FACTOR)</h3>
+            <p>
+              All private numbers, financial offers, maximum budgets, and minimum acceptable prices entered into this system are strictly LOCKED, FULLY ENCRYPTED, and processed automatically by an unmonitored AI algorithm.
+            </p>
+            <p className="mt-2 font-semibold">
+              NO HUMAN BEING — including the creator of this application, the administrators, the owners of the "Grandma Goes AI" YouTube channel, or any third party — has the technical ability or legal authorization to view, access, inspect, or manipulate individual private numbers. The application functions blindly and outputs only the automated final match (ZOPA - Zone of Possible Agreement).
+            </p>
+          </div>
 
-IMPORTANT: BY ACCESSING OR USING THIS APPLICATION, YOU EXPLICITLY AGREE TO BE BOUND BY ALL THE TERMS AND CONDITIONS STATED BELOW. IF YOU DO NOT AGREE, YOU MUST IMMEDIATELY CEASE AND TERMINATE ANY USE OF THIS PLATFORM.
+          <div>
+            <h3 className="font-bold text-gray-900 mb-1">2. NOT A LICENSED REAL ESTATE BROKER OR AGENT</h3>
+            <p>
+              This application, its creators, operators, owners, and affiliates are NOT licensed real estate brokers, salespersons, agents, or attorneys within the State of Washington, the State of Oregon, or anywhere within the United States of America.
+            </p>
+            <p className="mt-2">
+              This platform does NOT perform any licensed real estate activities. We do not solicit listings.
+            </p>
+          </div>
 
-1. ABSOLUTE DATA PRIVACY & ENCRYPTION GUARANTEE (NO HUMAN FACTOR)
-All private numbers, financial offers, maximum budgets, and minimum acceptable prices entered into this system are strictly LOCKED, FULLY ENCRYPTED, and processed automatically by an un-monitored AI algorithm.
+          <div>
+            <h3 className="font-bold text-gray-900 mb-1 text-red-700">3. THIRD-PARTY DATA DISCLAIMER & LIMITATION OF LIABILITY</h3>
+            <p>
+              This application automatically fetches, processes, and aggregates public property information from external third-party platforms, including public real estate listing websites and municipal or county property records databases.
+            </p>
+            <p className="mt-2">
+              The creators and operators of this application do not guarantee the 100% accuracy, completeness, timeliness, availability, or reliability of any data retrieved from these external sources. All information provided by this platform is for educational and analytical comparison purposes only, and should be independently verified by the user before making any financial decisions or real estate commitments.
+            </p>
+          </div>
+        </div>
 
-NO HUMAN BEING — including the creator of this application, the administrators, the owners of the "Grandma Does AI" YouTube channel, or any third party — has the technical ability or legal authorization to view, access, inspect, or manipulate individual private numbers. The application functions blindly and outputs only the automated final match (ZOPA - Zone of Possible Agreement).
-
-2. NOT A LICENSED REAL ESTATE BROKER OR AGENT
-This application, its creators, operators, owners, and affiliates are NOT licensed real estate brokers, salespersons, agents, or attorneys within the State of Washington, the State of Oregon, or anywhere within the United States of America.
-
-This platform does NOT perform any licensed real estate activities. We do not solicit listings, represent buyers, represent sellers, manage properties, conduct formal appraisals, or handle escrow funds.
-
-3. NO REPRESENTATION & NO FIDUCIARY DUTY
-This platform operates strictly as an independent, mathematical, and analytical matching tool. We do not represent any party in any current, past, or future real estate transactions. No agency relationship, brokerage relationship, or fiduciary duty is created or implied between the user and this platform or its creators. Any relationship, communication, or contract established between users outside or inside this application is entirely their own responsibility.
-
-4. SCOPE OF SERVICE & INFORMATIONAL PURPOSE ONLY
-This application is currently optimized strictly for the Pacific Northwest (NW) region (including WA/OR), serving as a pre-negotiation and pre-offer filter. All data, links to public county permit records, utility estimates, noise levels, and price match indications (ZOPA) generated by this tool are purely informational, statistical, and educational. They do not constitute formal real estate appraisals, binding evaluations, legal advice, or financial advice. Users are strictly advised to consult with their own licensed real estate attorneys and brokers before signing any binding contracts.
-
-5. AUTOMATED DOCUMENTS & NO BINDING CONTRACTS
-Any text outputs, summaries, or matches generated by this application do NOT constitute a legally binding real estate Purchase and Sale Agreement. If the parties agree on a ZOPA matching price, this tool may only assist in generating a non-binding "Letter of Intent" (LOI) or "Memorandum of Understanding" (MOU). It is the sole responsibility of the users to deliver such documents to their attorneys or licensed brokers for formal, legally compliant drafting.
-
-6. TOTAL EXCLUSION OF LIABILITY & INDEMNIFICATION
-The user assumes 100% of the risk and liability for any actions, investments, or negotiations made based on the data provided by this tool. Under no circumstances shall the creator ("Grandma Does AI"), administrators, or software owners be liable for any financial losses, failed real estate transactions, legal disputes, property damages, or emotional distress arising out of or related to the use of this application. By checking "I Accept", you permanently release the platform and its creators from any and all legal, criminal, and financial liability — PERIOD.`}
-          </pre>
-
-          <label className="flex items-start gap-2 mt-4 text-sm text-[#16241D]">
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={(e) => setChecked(e.target.checked)}
-              className="mt-1"
-            />
-            I have read and agree to the above terms.
-          </label>
-
+        {/* Action Button */}
+        <div className="flex justify-end pt-2 border-t">
           <button
-            onClick={handleAccept}
-            disabled={!checked}
-            className="mt-4 w-full py-3 rounded-md font-semibold text-white bg-[#3F5C4C] disabled:bg-gray-400 disabled:cursor-not-allowed"
+            disabled={!hasScrolledToBottom}
+            onClick={onAccept}
+            className={`px-6 py-2.5 rounded font-semibold text-white transition-all ${
+              hasScrolledToBottom 
+                ? 'bg-emerald-700 hover:bg-emerald-800 cursor-pointer' 
+                : 'bg-gray-400 cursor-not-allowed opacity-50'
+            }`}
           >
-            I Accept
+            {hasScrolledToBottom ? 'I Agree & Continue' : 'Please Scroll Down to Read & Agree'}
           </button>
         </div>
-      </div>
-    );
-  }
 
-  return <>{children}</>;
+      </div>
+    </div>
+  );
 }
