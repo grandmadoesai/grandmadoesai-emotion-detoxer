@@ -8,15 +8,14 @@ export async function POST(request: Request) {
     const body = await request.json();
     const rawInput: string = body.url || '';
 
-    console.log('Incoming raw string:', rawInput);
+    console.log('Processing incoming payload:', rawInput);
 
-    // Extract the URL from the input text
     const urlRegex = /(https?:\/\/[^\s]+)/;
     const match = rawInput.match(urlRegex);
     
     let cleanUrl = '';
-    if (match && match[1]) {
-      cleanUrl = match[1];
+    if (match && match) {
+      cleanUrl = match[0];
     } else {
       cleanUrl = rawInput;
     }
@@ -25,33 +24,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No valid URL found' }, { status: 400 });
     }
 
-    // Clean tracking tags from the URL (removes everything after the question mark)
-    let finalUrl = cleanUrl.split('?')[0].replace(/[);,]+$/, '').trim();
+    // Scrub tracking tags and trailing slashes safely
+    let finalUrl = cleanUrl.split('?')[0].replace(/\/+$/, '').trim();
 
-    // ADVANCED ADDRESS EXTRACTION FROM ZILLOW LINK
+    // FAILSAFE TEXT EXTRACTION FOR AMERICAN PROPERTY LISTINGS
     let parsedAddress = "Unknown Address";
-    if (finalUrl.includes('://zillow.com')) {
-      const parts = finalUrl.split('/homedetails/');
-      if (parts && parts[1]) {
-        const addressPart = parts[1].split('/')[0];
-        if (addressPart) {
-          // Replaces dashes with clear spaces and formats title case
-          parsedAddress = addressPart
+    if (finalUrl.includes('/homedetails/')) {
+      const urlTokens = finalUrl.split('/homedetails/');
+      if (urlTokens.length > 1) {
+        const addressSegment = urlTokens[1].split('/')[0];
+        if (addressSegment) {
+          // Cleans dashes, removes the numerical ZPID code, and capitalizes words cleanly
+          parsedAddress = addressSegment
             .replace(/-/g, ' ')
-            .replace(/\d+_zpid.*/, '')
+            .replace(/\d+_zpid.*/i, '')
+            .replace(/\b\w/g, (char) => char.toUpperCase())
             .trim();
         }
       }
     }
 
-    // Load newly added Supabase credentials from your environment configuration
+    // Force load the configuration elements
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json({
         success: true,
-        message: "URL cleared. Note: Please run a fresh deployment to connect your newly saved Supabase variables.",
+        message: "URL cleared. Note: Run a fresh deployment from the Vercel Overview page to load your database credentials.",
         extractedAddress: parsedAddress,
         url: finalUrl
       });
@@ -73,10 +73,9 @@ export async function POST(request: Request) {
       .select();
 
     if (dbError) {
-      // If table name differs, we still return the clean data to the phone screen
       return NextResponse.json({ 
         success: true, 
-        message: `URL saved in memory, but database table mismatch: ${dbError.message}`,
+        message: `Address extracted, but your Supabase table name might differ from 'properties': ${dbError.message}`,
         extractedAddress: parsedAddress,
         url: finalUrl
       });
