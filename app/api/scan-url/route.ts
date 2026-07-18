@@ -5,13 +5,25 @@ export async function POST(request: Request) {
     const { url } = await request.json();
 
     if (!url) {
-      return NextResponse.json({ error: 'URL is required' }, { status: 400 });
+      return NextResponse.json({ error: 'Nije primljen nikakav ulazni podatak' }, { status: 400 });
     }
 
-    console.log('Primljen URL za obradu:', url);
+    console.log('Primljeni tekst s mobitela:', url);
 
-    // Simuliramo pravi iPhone na mobilnoj mreži kako nas Zillow/Redfin ne bi odmah blokirali
-    const response = await fetch(url, {
+    // Pametni filter: tražimo web link unutar primljenog teksta (rješava problem s Any inputom)
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const matches = url.match(urlRegex);
+    
+    if (!matches || matches.length === 0) {
+      return NextResponse.json({ error: 'Failed to parse URL from Shortcut Input' }, { status: 400 });
+    }
+
+    // Uzimamo čisti link, očišćen od naslova i dodatnog teksta
+    const cleanUrl = matches[0];
+    console.log('Očišćeni URL za obradu:', cleanUrl);
+
+    // Simuliramo pravi iPhone na mobilnoj mreži
+    const response = await fetch(cleanUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Mobile/15E148 Safari/604.1',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -27,35 +39,29 @@ export async function POST(request: Request) {
 
     const htmlText = await response.text();
 
-    // Pokrećemo laganu regex ekstrakciju osnovnih podataka iz HTML-a nekretnine
-    // (Ovo traži standardne formate adresa i cijena na američkim oglasnicima)
     let extractedAddress = "Unknown Address";
     let extractedPrice = "Unknown Price";
 
-    // 1. Pokušaj izvlačenja adrese preko naslova stranice (Zillow/Redfin često stavljaju adresu u <title>)
+    // Izvlačenje adrese iz naslova stranice
     const titleMatch = htmlText.match(/<title>([^<]+)<\/title>/i);
     if (titleMatch && titleMatch[1]) {
-      const titleText = titleMatch[1];
-      // Ako naslov sadrži riječi poput 'Zillow' ili 'Redfin', pokušavamo očistiti tekst da ostane samo adresa
-      extractedAddress = titleText.split('|')[0].split(' - ')[0].trim();
+      extractedAddress = titleMatch[1].split('|')[0].split(' - ')[0].trim();
     }
 
-    // 2. Pokušaj izvlačenja cijene traženjem dolarskog znaka i brojki u specifičnim meta oznakama
+    // Izvlačenje cijene
     const priceMatch = htmlText.match(/"price":\s*"?\$?([0-9,]+)"?/i) || htmlText.match(/\$([0-9]{3},[0-9]{3})/);
     if (priceMatch && priceMatch[1]) {
       extractedPrice = `$${priceMatch[1]}`;
     }
 
-    // Ovdje se kôd povezuje s tvojom postojećom strukturom za spremanje nekretnina
-    // Privremeno vraćamo podatke natrag aplikaciji kako bismo potvrdili da je link pročitan
     return NextResponse.json({
       success: true,
       message: "URL uspješno zaprimljen i obrađen",
       data: {
-        url: url,
+        url: cleanUrl,
         address: extractedAddress,
         price: extractedPrice,
-        source: url.includes('zillow.com') ? 'Zillow' : url.includes('redfin.com') ? 'Redfin' : 'Realtor'
+        source: cleanUrl.includes('zillow.com') ? 'Zillow' : cleanUrl.includes('redfin.com') ? 'Redfin' : 'Realtor'
       }
     });
 
