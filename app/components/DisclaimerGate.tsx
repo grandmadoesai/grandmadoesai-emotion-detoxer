@@ -1,12 +1,12 @@
-// UPDATE THIS COMPONENT IN THE FRONTEND TO INCLUDE THE NEW DISCLAIMER
+"use client";
+
 import React, { useState } from 'react';
 
-export default function LegalNoticeModal({ onAccept }) {
+export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
-  const handleScroll = (e) => {
-    const target = e.target;
-    // Checks if user scrolled to the bottom of the legal text
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
     if (target.scrollHeight - target.scrollTop <= target.clientHeight + 50) {
       setHasScrolledToBottom(true);
     }
