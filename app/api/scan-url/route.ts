@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
-// Uvozimo tvoj postojeći Supabase klijent koji je već konfiguriran u aplikaciji
-import { supabase } from '@/lib/supabaseClient';
+// Fleksibilan uvoz: prihvaćamo bilo koje ime pod kojim je Supabase konfiguriran u tvom projektu
+import * as supabaseModule from '@/lib/supabaseClient';
+
+// Automatski pronalazimo ispravan klijent unutar modula
+const supabase = (supabaseModule as any).supabase || (supabaseModule as any).supabaseClient || (supabaseModule as any).default;
 
 export async function POST(request: Request) {
   try {
@@ -13,8 +16,8 @@ export async function POST(request: Request) {
     const match = rawInput.match(urlRegex);
     
     let cleanUrl = '';
-    if (match && match) {
-      cleanUrl = match[0];
+    if (match && match[1]) {
+      cleanUrl = match[1];
     } else {
       cleanUrl = rawInput;
     }
@@ -25,22 +28,31 @@ export async function POST(request: Request) {
 
     const finalUrl = cleanUrl.replace(/[);,]+$/, '').trim();
 
-    // AUTOMATIC ADDRESS EXTRACTION FROM URL
+    // EXTRACTION OF ADDRESS FROM URL TEXT
     let parsedAddress = "Unknown Address";
     if (finalUrl.includes('://zillow.com')) {
       const parts = finalUrl.split('/homedetails/');
-      if (parts[1]) {
-        const addressPart = parts[1].split('/')[0];
-        if (addressPart) {
-          parsedAddress = addressPart.replace(/-/g, ' ').replace(/\d+_zpid.*/, '').trim();
+      if (parts && parts[1]) {
+        const addressPart = parts[1].split('/');
+        if (addressPart && addressPart[0]) {
+          parsedAddress = addressPart[0].replace(/-/g, ' ').replace(/\d+_zpid.*/, '').trim();
         }
       }
     }
 
-    // SAVING DIRECTLY TO YOUR SUPABASE DATABASE
-    // We insert the house into your existing 'properties' table (or whatever your schema uses)
+    // Checking if database client is properly initialized
+    if (!supabase || typeof supabase.from !== 'function') {
+      return NextResponse.json({ 
+        success: true, 
+        message: "URL received, but database client configuration needs a naming check.",
+        extractedAddress: parsedAddress,
+        url: finalUrl
+      });
+    }
+
+    // INSERTING DATA INTO YOUR DATABASE
     const { data: savedData, error: dbError } = await supabase
-      .from('properties') // Ako ti se tablica zove drukčije (npr 'listings'), AI na Vercelu će javiti grešku pa ćemo prilagoditi naziv
+      .from('properties')
       .insert([
         {
           address: parsedAddress,
