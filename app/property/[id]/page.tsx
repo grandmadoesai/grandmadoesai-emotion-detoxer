@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
-// Inicijalizacija Supabase klijenta
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -13,11 +12,11 @@ export default function PropertySummaryPage() {
   const [property, setProperty] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [hasAgreed, setHasAgreed] = useState(false);
 
   useEffect(() => {
     async function fetchProperty() {
       if (!params || !params.id) return;
-      
       try {
         setLoading(true);
         const { data, error } = await supabase
@@ -26,10 +25,7 @@ export default function PropertySummaryPage() {
           .eq('id', params.id)
           .single();
 
-        if (error) {
-          throw new error;
-        }
-
+        if (error) throw error;
         if (!data) {
           setErrorMsg('Nekretnina nije pronađena u bazi podataka.');
         } else {
@@ -42,26 +38,54 @@ export default function PropertySummaryPage() {
         setLoading(false);
       }
     }
-
     fetchProperty();
   }, [params?.id]);
 
-  if (loading) {
-    return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif' }}>Učitavam podatke nekretnine...</div>;
-  }
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif' }}>Učitavam podatke nekretnine...</div>;
+  if (errorMsg || !property) return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif', color: 'red' }}>{errorMsg || 'Podaci nisu dostupni.'}</div>;
 
-  if (errorMsg || !property) {
-    return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif', color: 'red' }}>{errorMsg || 'Podaci nisu dostupni.'}</div>;
-  }
-
-  // Pomoćna funkcija za formatiranje valute
   const formatCurrency = (val: any) => {
     if (val === null || val === undefined) return 'Nije dostupno';
     const num = Number(val);
-    if (isNaN(num)) return val;
-    return '$' + num.toLocaleString();
+    return isNaN(num) ? val : '$' + num.toLocaleString();
   };
 
+  // 1. EKRAN SA ORIGINALNIM PRAVNIM PRAVILIMA (PRIKAZUJE SE PRVI)
+  if (!hasAgreed) {
+    return (
+      <div style={{ padding: '20px', maxWidth: '500px', margin: '40px auto', fontFamily: 'sans-serif', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', background: '#fff' }}>
+        <h2 style={{ color: '#111', marginTop: '0', fontSize: '24px', fontWeight: 'bold' }}>Important Legal Notice</h2>
+        <p style={{ color: 'red', fontSize: '11px', fontWeight: 'bold', letterSpacing: '0.5px', lineHeight: '1.4', margin: '10px 0' }}>
+          APPLICATION DISCLAIMER • CRITICAL LEGAL NOTICE, LEGAL DISCLAIMER & DATA PRIVACY AGREEMENT
+        </p>
+        
+        <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '4px', fontSize: '14px', lineHeight: '1.5', color: '#333', marginBottom: '20px', border: '1px solid #eee' }}>
+          <p style={{ marginTop: '0' }}>
+            <strong>IMPORTANT: BY ACCESSING OR USING THIS APPLICATION, YOU EXPLICITLY AGREE TO BE BOUND BY ALL THE TERMS AND CONDITIONS STATED BELOW. IF YOU DO NOT AGREE, YOU MUST IMMEDIATELY CEASE AND TERMINATE ANY USE OF THIS PLATFORM.</strong>
+          </p>
+          
+          <p>
+            <strong>1. ABSOLUTE DATA PRIVACY & ENCRYPTION GUARANTEE (NO HUMAN FACTOR)</strong>
+            <br />
+            All private numbers, financial offers, maximum budgets, and minimum acceptable prices entered into this system are strictly LOCKED, FULLY ENCRYPTED, and processed automatically by an unmonitored AI algorithm.
+          </p>
+          
+          <p style={{ marginBottom: '0' }}>
+            <strong>NO HUMAN BEING</strong> — including the creator of this application, the administrators, the owners of the "Grandma Goes AI" YouTube channel, or any third party — has the technical ability or legal authorization to view, access, inspect, or...
+          </p>
+        </div>
+
+        <button 
+          onClick={() => setHasAgreed(true)}
+          style={{ width: '100%', padding: '12px', background: '#27ae60', color: 'white', border: 'none', borderRadius: '4px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer' }}
+        >
+          I Agree & Continue
+        </button>
+      </div>
+    );
+  }
+
+  // 2. EKRAN SA TABELOM PODATAKA (OTVARA SE ODMAH NAKON KLIKA NA ZELENO DUGME)
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif', color: '#333' }}>
       <header style={{ borderBottom: '2px solid #eaeaea', paddingBottom: '20px', marginBottom: '20px' }}>
@@ -89,7 +113,7 @@ export default function PropertySummaryPage() {
         <tbody>
           <tr>
             <td style={{ padding: '12px', border: '1px solid #ddd', fontWeight: 'bold' }}>Cijena / Procjena Vrijednosti</td>
-            <td style={{ padding: '12px', border: '1px solid #ddd', color: '#c0392b', fontWeight: 'bold' }}>{formatCurrency(property.price || property.zillowPrice)}</td>
+            <td style={{ padding: '12px', border: '1px solid #ddd', color: '#c0392b', fontWeight: 'bold' }}>{formatCurrency(property.price)}</td>
             <td style={{ padding: '12px', border: '1px solid #ddd', color: '#27ae60', fontWeight: 'bold', background: '#f4fbf7' }}>{formatCurrency(property.county_value)}</td>
           </tr>
           <tr>
