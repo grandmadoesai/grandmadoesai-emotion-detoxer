@@ -27,13 +27,12 @@ export default function PropertySummaryPage() {
 
         if (error) throw error;
         if (!data) {
-          setErrorMsg('Nekretnina nije pronađena u bazi podataka.');
+          setErrorMsg('Nekretnina nije pronađena.');
         } else {
           setProperty(data);
         }
       } catch (err: any) {
-        console.error(err);
-        setErrorMsg('Greška pri učitavanju podataka iz baze.');
+        setErrorMsg('Greška pri učitavanju podataka.');
       } finally {
         setLoading(false);
       }
@@ -41,8 +40,8 @@ export default function PropertySummaryPage() {
     fetchProperty();
   }, [params?.id]);
 
-  if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif' }}>Učitavam podatke nekretnine...</div>;
-  if (errorMsg || !property) return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif', color: 'red' }}>{errorMsg || 'Podaci nisu dostupni.'}</div>;
+  if (loading) return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif' }}>Učitavam podatke...</div>;
+  if (errorMsg || !property) return <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'sans-serif', color: 'red' }}>{errorMsg}</div>;
 
   const formatCurrency = (val: any) => {
     if (val === null || val === undefined) return 'Nije dostupno';
@@ -50,7 +49,7 @@ export default function PropertySummaryPage() {
     return isNaN(num) ? val : '$' + num.toLocaleString();
   };
 
-  // 1. EKRAN SA ORIGINALNIM PRAVNIM PRAVILIMA (PRIKAZUJE SE PRVI)
+  // ORIGINALNI DISCLAIMER - SVE REČENICE I DIZAJN SU ZADRŽANI
   if (!hasAgreed) {
     return (
       <div style={{ padding: '20px', maxWidth: '500px', margin: '40px auto', fontFamily: 'sans-serif', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', background: '#fff' }}>
@@ -63,13 +62,11 @@ export default function PropertySummaryPage() {
           <p style={{ marginTop: '0' }}>
             <strong>IMPORTANT: BY ACCESSING OR USING THIS APPLICATION, YOU EXPLICITLY AGREE TO BE BOUND BY ALL THE TERMS AND CONDITIONS STATED BELOW. IF YOU DO NOT AGREE, YOU MUST IMMEDIATELY CEASE AND TERMINATE ANY USE OF THIS PLATFORM.</strong>
           </p>
-          
           <p>
             <strong>1. ABSOLUTE DATA PRIVACY & ENCRYPTION GUARANTEE (NO HUMAN FACTOR)</strong>
             <br />
             All private numbers, financial offers, maximum budgets, and minimum acceptable prices entered into this system are strictly LOCKED, FULLY ENCRYPTED, and processed automatically by an unmonitored AI algorithm.
           </p>
-          
           <p style={{ marginBottom: '0' }}>
             <strong>NO HUMAN BEING</strong> — including the creator of this application, the administrators, the owners of the "Grandma Goes AI" YouTube channel, or any third party — has the technical ability or legal authorization to view, access, inspect, or...
           </p>
@@ -85,7 +82,7 @@ export default function PropertySummaryPage() {
     );
   }
 
-  // 2. EKRAN SA TABELOM PODATAKA (OTVARA SE ODMAH NAKON KLIKA NA ZELENO DUGME)
+  // TABELA KOJA SE OTVARA NAKON KLIKA
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', padding: '20px', fontFamily: 'sans-serif', color: '#333' }}>
       <header style={{ borderBottom: '2px solid #eaeaea', paddingBottom: '20px', marginBottom: '20px' }}>
@@ -106,8 +103,8 @@ export default function PropertySummaryPage() {
         <thead>
           <tr style={{ background: '#2c3e50', color: 'white', textAlign: 'left' }}>
             <th style={{ padding: '12px', border: '1px solid #ddd' }}>Podatak</th>
-            <th style={{ padding: '12px', border: '1px solid #ddd' }}>Zillow Podaci (Komercijalni)</th>
-            <th style={{ padding: '12px', border: '1px solid #ddd', background: '#27ae60' }}>Clark County Službeni Podaci (Državni)</th>
+            <th style={{ padding: '12px', border: '1px solid #ddd' }}>Zillow Podaci</th>
+            <th style={{ padding: '12px', border: '1px solid #ddd', background: '#27ae60' }}>Clark County Službeni Podaci</th>
           </tr>
         </thead>
         <tbody>
@@ -118,12 +115,12 @@ export default function PropertySummaryPage() {
           </tr>
           <tr>
             <td style={{ padding: '12px', border: '1px solid #ddd', fontWeight: 'bold' }}>Legalni Vlasnik Nekretnine</td>
-            <td style={{ padding: '12px', border: '1px solid #ddd', color: '#7f8c8d' }}>Skriveno (Vidi se samo na zvaničnim dokumentima)</td>
+            <td style={{ padding: '12px', border: '1px solid #ddd', color: '#7f8c8d' }}>Skriveno</td>
             <td style={{ padding: '12px', border: '1px solid #ddd', fontWeight: 'bold', background: '#f4fbf7' }}>{property.owner_name || 'Nije dostupno'}</td>
           </tr>
           <tr>
             <td style={{ padding: '12px', border: '1px solid #ddd', fontWeight: 'bold' }}>Poštanski Broj (ZIP)</td>
-            <td style={{ padding: '12px', border: '1px solid #ddd', color: '#c0392b' }}>{property.zillowZip || 'Nije specifikovano'}</td>
+            <td style={{ padding: '12px', border: '1px solid #ddd', color: '#c0392b' }}>{property.zillowZip || '-'}</td>
             <td style={{ padding: '12px', border: '1px solid #ddd', fontWeight: 'bold', background: '#f4fbf7' }}>{property.correct_zip || 'Nije dostupno'}</td>
           </tr>
           <tr>
@@ -132,22 +129,12 @@ export default function PropertySummaryPage() {
             <td style={{ padding: '12px', border: '1px solid #ddd', background: '#f4fbf7' }}>{formatCurrency(property.land_value)}</td>
           </tr>
           <tr>
-            <td style={{ padding: '12px', border: '1px solid #ddd', fontWeight: 'bold' }}>Službena Vrijednost Građevine / Objekta</td>
+            <td style={{ padding: '12px', border: '1px solid #ddd', fontWeight: 'bold' }}>Službena Vrijednost Građevine</td>
             <td style={{ padding: '12px', border: '1px solid #ddd', color: '#7f8c8d' }}>Nije dostupno</td>
             <td style={{ padding: '12px', border: '1px solid #ddd', background: '#f4fbf7' }}>{formatCurrency(property.building_value)}</td>
           </tr>
         </tbody>
       </table>
-
-      {(property.price && property.county_value) && (
-        <div style={{ borderLeft: '4px solid #27ae60', background: '#ebf5fb', padding: '15px', borderRadius: '4px' }}>
-          <h4 style={{ margin: '0 0 5px 0', color: '#2980b9' }}>💡 Pametna Napomena za Kupca:</h4>
-          <p style={{ margin: '0', fontSize: '14px', lineHeight: '1.5' }}>
-            Zillow trenutno procjenjuje ovu nekretninu na {formatCurrency(property.price)}, dok službena državna procjena okruga iznosi {formatCurrency(property.county_value)}. 
-            Razlika iznosi {formatCurrency(Math.abs(Number(property.price) - Number(property.county_value)))}.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
