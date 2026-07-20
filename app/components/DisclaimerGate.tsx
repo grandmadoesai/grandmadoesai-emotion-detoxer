@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 
-export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
+export default function DisclaimerGate({ children }: { children: React.ReactNode }) {
+  const [hasAgreed, setHasAgreed] = useState(false);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -11,6 +12,10 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
       setHasScrolledToBottom(true);
     }
   };
+
+  if (hasAgreed) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
@@ -21,7 +26,6 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
           APPLICATION DISCLAIMER • CRITICAL LEGAL NOTICE, LEGAL DISCLAIMER & DATA PRIVACY AGREEMENT
         </p>
 
-        {/* Scrollable Text Box */}
         <div 
           onScroll={handleScroll}
           className="overflow-y-auto pr-2 text-sm text-gray-700 space-y-4 mb-6 border p-4 bg-gray-50 rounded"
@@ -62,11 +66,10 @@ export default function DisclaimerGate({ onAccept }: { onAccept: () => void }) {
           </div>
         </div>
 
-        {/* Action Button */}
         <div className="flex justify-end pt-2 border-t">
           <button
             disabled={!hasScrolledToBottom}
-            onClick={onAccept}
+            onClick={() => setHasAgreed(true)}
             className={`px-6 py-2.5 rounded font-semibold text-white transition-all ${
               hasScrolledToBottom 
                 ? 'bg-emerald-700 hover:bg-emerald-800 cursor-pointer' 
